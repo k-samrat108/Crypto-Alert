@@ -66,7 +66,7 @@ async def scan_market():
                     "⚠️ Educational alert. Not financial advice."
                 )
 
-                await send_alert(msg, USER_ID)
+                await send_alert(msg)
                 state[symbol] = today
                 save_state(state)
 
