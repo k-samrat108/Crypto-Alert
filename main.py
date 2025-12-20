@@ -11,7 +11,6 @@ from notifier import send_alert
 
 IST = ZoneInfo(TIMEZONE)
 STATE_FILE = "state.json"
-USER_ID = None  # Will auto-detect first message sender
 
 def load_state():
     try:
