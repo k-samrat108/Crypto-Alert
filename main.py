@@ -11,6 +11,7 @@ from notifier import send_alert
 
 IST = ZoneInfo(TIMEZONE)
 STATE_FILE = "state.json"
+USER_ID = None  # Will auto-detect first message sender
 
 def load_state():
     try:
@@ -65,8 +66,9 @@ async def scan_market():
                     "⚠️ Educational alert. Not financial advice."
                 )
 
-                await send_alert(msg)
+                await send_alert(msg, USER_ID)
                 state[symbol] = today
+                save_state(state)
 
         except Exception as e:
             print(symbol, "error:", e)
@@ -77,3 +79,4 @@ def job():
 scheduler = BlockingScheduler(timezone=IST)
 scheduler.add_job(job, "cron", hour=5, minute=30)
 scheduler.start()
+
