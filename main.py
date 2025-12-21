@@ -11,7 +11,6 @@ from notifier import send_alert
 
 IST = ZoneInfo(TIMEZONE)
 STATE_FILE = "state.json"
-USER_ID = None  # Will auto-detect first message sender
 
 def load_state():
     try:
@@ -66,7 +65,7 @@ async def scan_market():
                     "⚠️ Educational alert. Not financial advice."
                 )
 
-                await send_alert(msg, USER_ID)
+                await send_alert(msg)
                 state[symbol] = today
                 save_state(state)
 
