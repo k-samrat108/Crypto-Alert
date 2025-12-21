@@ -69,6 +69,12 @@ async def scan_market():
                 state[symbol] = today
                 save_state(state)
 
+        await context.bot.send_message(
+    chat_id="@krypto_alert",
+    text="✅ Bot LIVE test message"
+)
+
+
         except Exception as e:
             print(symbol, "error:", e)
 
