@@ -1,6 +1,6 @@
 import requests, json, asyncio
 import pandas as pd
-from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -11,6 +11,8 @@ from notifier import send_alert
 
 IST = ZoneInfo(TIMEZONE)
 STATE_FILE = "state.json"
+
+# ---------------- STATE ----------------
 
 def load_state():
     try:
@@ -23,10 +25,17 @@ def save_state(state):
     with open(STATE_FILE, "w") as f:
         json.dump(state, f)
 
+# ---------------- DATA ----------------
+
 def fetch_klines(symbol):
     url = f"{BINANCE_BASE}/api/v3/klines"
-    params = {"symbol": symbol, "interval": "1d", "limit": 60}
+    params = {
+        "symbol": symbol,
+        "interval": "1d",
+        "limit": 60
+    }
     r = requests.get(url, params=params, timeout=10)
+    r.raise_for_status()
     data = r.json()
 
     df = pd.DataFrame(data, columns=[
@@ -37,13 +46,14 @@ def fetch_klines(symbol):
     df = df[["open","high","low","close","volume"]].astype(float)
     return df
 
+# ---------------- CORE JOB ----------------
+
 async def scan_market():
     state = load_state()
     today = datetime.now(IST).strftime("%Y-%m-%d")
 
     for symbol in SYMBOLS:
-        last_alert = state.get(symbol)
-        if last_alert == today:
+        if state.get(symbol) == today:
             continue
 
         try:
@@ -52,16 +62,15 @@ async def scan_market():
                 price = df.iloc[-1]["close"]
 
                 msg = (
-                    "🚀 DAILY TREND REVERSAL ALERT\n\n"
-                    f"🪙 Coin: {symbol}\n"
-                    "📅 Timeframe: Daily\n"
+                    "🚨 *DAILY TREND REVERSAL ALERT*\n\n"
+                    f"🪙 Coin: `{symbol}`\n"
+                    "⏱ Timeframe: Daily\n"
                     f"💰 Close Price: {price}\n\n"
                     "📊 Technical Breakdown:\n"
                     "• EMA 20 crossed above EMA 50\n"
                     "• Volume above 20-day average\n"
                     "• Bullish daily candle\n\n"
-                    "📈 Bias: Uptrend initiation\n"
-                    f"⏰ Scan Time: {datetime.now(IST).strftime('%d %b %Y | %H:%M IST')}\n\n"
+                    f"🕰 Scan Time: {datetime.now(IST).strftime('%d %b %Y %I:%M %p IST')}\n"
                     "⚠️ Educational alert. Not financial advice."
                 )
 
@@ -70,12 +79,18 @@ async def scan_market():
                 save_state(state)
 
         except Exception as e:
-            print(symbol, "error:", e)
+            print(symbol, "ERROR:", e)
 
-def job():
-    asyncio.run(scan_market())
+# ---------------- START ----------------
 
-scheduler = BlockingScheduler(timezone=IST)
-scheduler.add_job(job, "cron", hour=5, minute=30)
-scheduler.start()
+async def main():
+    scheduler = AsyncIOScheduler(timezone=IST)
+    scheduler.add_job(scan_market, "cron", hour=5, minute=30)
+    scheduler.start()
 
+    print("✅ Crypto Alert Bot running on Railway")
+    while True:
+        await asyncio.sleep(3600)
+
+if __name__ == "__main__":
+    asyncio.run(main())
