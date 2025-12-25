@@ -25,6 +25,14 @@ def save_state(state):
     with open(STATE_FILE, "w") as f:
         json.dump(state, f)
 
+def is_test_time():
+    now = datetime.now(IST)
+    return (
+        now.strftime("%Y-%m-%d") == "2025-12-25"
+        and now.hour == 17
+    )
+
+
 # ---------------- DATA ----------------
 
 def fetch_klines(symbol):
@@ -50,7 +58,22 @@ def fetch_klines(symbol):
 
 async def scan_market():
     state = load_state()
-    today = datetime.now(IST).strftime("%Y-%m-%d")
+    now = datetime.now(IST)
+    today = now.strftime("%Y-%m-%d")
+
+    # ✅ TEST MESSAGE AT 5:00 PM ON 25 DEC 2025
+    if is_test_time() and state.get("test_done") != today:
+        await send_alert(
+            "✅ TEST ALERT SUCCESSFUL\n\n"
+            "Bot is working perfectly on Railway.\n"
+            "Time: 5:00 PM IST\n"
+            "Date: 25 Dec 2025\n\n"
+            "Next alerts will follow real strategy."
+        )
+        state["test_done"] = today
+        save_state(state)
+        return
+
 
     for symbol in SYMBOLS:
         if state.get(symbol) == today:
