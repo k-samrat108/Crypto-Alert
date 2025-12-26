@@ -28,8 +28,8 @@ def save_state(state):
 def is_test_time():
     now = datetime.now(IST)
     return (
-        now.strftime("%Y-%m-%d") == "2025-12-25"
-        and now.hour == 17
+        now.strftime("%Y-%m-%d") == "2025-12-26"
+        and now.hour == 13
     )
 
 
